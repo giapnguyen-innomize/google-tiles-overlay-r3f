@@ -5,8 +5,8 @@ import {DoubleSide} from "three";
 import {earthAntiGeoreferencing} from "./earthAntiGeoreferencing.ts";
 import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
 import {DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader.js";
-const ktx2Loader = new KTX2Loader();
 
+const ktx2Loader = new KTX2Loader();
 ktx2Loader.setTranscoderPath('https://storage.googleapis.com/ogc-3d-tiles/basis/');
 
 const dracoLoader = new DRACOLoader();
