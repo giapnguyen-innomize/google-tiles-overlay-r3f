@@ -35,7 +35,7 @@ export const Box = (props: ThreeElements['mesh']) => {
 
 
 export const App = () => {
-    return <Canvas>
+    return <Canvas camera={{position: [0, 0, 300]}}>
         <Stats/>
         <ambientLight intensity={Math.PI / 2}/>
         <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI}/>
