@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import {Color, Scene} from 'three'
-import {useMemo, useRef, useState} from 'react'
+import {Color, DepthTexture, Scene} from 'three'
+import {useEffect, useMemo, useRef, useState} from 'react'
 import {Canvas, createPortal, ThreeElements, useFrame, useThree} from '@react-three/fiber'
 import './index.css'
 import {
@@ -12,6 +12,7 @@ import {
 import {MapTiles} from "./components/MapTiles/MapTiles.tsx";
 import {PhotogrammetryTiles} from "./components/PhotogrammetryTiles/PhotogrammetryTiles.tsx";
 import {fragmentShader, vertexShader} from "./components/ComposePassShader/shaderMaterial.ts";
+import {useControls} from "leva";
 
 
 export const Box = (props: ThreeElements['mesh']) => {
@@ -50,8 +51,17 @@ export const App = () => {
 
 
 const P = () => {
-    const renderTargetA = useFBO(4000, 4000);
-    const renderTargetB = useFBO(4000, 4000);
+    const renderTargetA = useFBO(4000, 4000, {
+        stencilBuffer: false,
+        depthBuffer: true,
+        depthTexture: new DepthTexture(),
+
+    });
+    const renderTargetB = useFBO(4000, 4000, {
+        stencilBuffer: false,
+        depthBuffer: true,
+        depthTexture: new DepthTexture(),
+    });
     const camera = useThree(state => state.camera);
     const planeRef = useRef<any>();
 
@@ -70,6 +80,8 @@ const P = () => {
         return scene
     }, [])
 
+    const {margin} = useControls({margin: {value: 2, min: 0, max: 9.9}})
+
     useFrame(({gl}) => {
         // render target A
         gl.setRenderTarget(renderTargetA)
@@ -84,7 +96,7 @@ const P = () => {
             planeRef.current.material.uniforms.colorA.value = renderTargetA.texture;
             planeRef.current.material.uniforms.depthB.value = renderTargetB.depthTexture;
             planeRef.current.material.uniforms.colorB.value = renderTargetB.texture;
-            planeRef.current.material.uniforms.margin.value = 1.0;
+            planeRef.current.material.uniforms.margin.value = margin;
             planeRef.current.material.needsUpdate = true
         }
 
@@ -104,6 +116,9 @@ const P = () => {
         margin: {value: 1.5}
     }), [])
 
+    useEffect(() => {
+        console.log('console.log(planeRef.current)', planeRef.current)
+    }, [planeRef.current]);
 
     return <>
         {createPortal(<>
