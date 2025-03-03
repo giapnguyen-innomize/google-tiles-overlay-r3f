@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import {Color, DepthTexture, Scene} from 'three'
-import {useEffect, useMemo, useRef, useState} from 'react'
+import {Color, DepthTexture, Scene, PerspectiveCamera, OrthographicCamera} from 'three'
+import {useMemo, useRef, useState} from 'react'
 import {Canvas, createPortal, ThreeElements, useFrame, useThree} from '@react-three/fiber'
 import './index.css'
 import {
@@ -36,35 +36,52 @@ export const Box = (props: ThreeElements['mesh']) => {
 
 
 export const App = () => {
-    return <Canvas camera={{position: [0, 0, 300]}}>
+
+    return <Canvas camera={{position: [0, 0, 2]}}>
         <Stats/>
         <ambientLight intensity={Math.PI / 2}/>
         <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI}/>
 
-        <axesHelper args={[50]}/>
+        <axesHelper args={[10]}/>
 
-        <OrbitControlsDrei makeDefault/>
+        <Controls/>
 
         <P></P>
     </Canvas>
 }
 
+const Controls = () => {
+    const {
+        gl: {domElement},
+    } = useThree();
+
+    const ref = useRef<any>()
+
+    return <>
+        <PerspectiveCameraDrei ref={ref} name={'main camera'} near={0.01} far={40000} fov={60} position={[0, 0, 20]}/>
+        <OrbitControlsDrei camera={ref.current} domElement={domElement}/>
+    </>
+}
+
 
 const P = () => {
-    const renderTargetA = useFBO(4000, 4000, {
+    const {scene, size: {width, height}} = useThree();
+    const renderTargetA = useFBO(width, height, {
         stencilBuffer: false,
         depthBuffer: true,
         depthTexture: new DepthTexture(),
 
     });
-    const renderTargetB = useFBO(4000, 4000, {
+    const renderTargetB = useFBO(width, height, {
         stencilBuffer: false,
         depthBuffer: true,
         depthTexture: new DepthTexture(),
     });
-    const camera = useThree(state => state.camera);
+
+    const mainCamera = scene.getObjectByName('main camera')
     const planeRef = useRef<any>();
 
+    console.log('mainCamera', mainCamera)
 
     const sceneA = useMemo(() => {
         const scene = new Scene()
@@ -80,16 +97,16 @@ const P = () => {
         return scene
     }, [])
 
-    const {margin} = useControls({margin: {value: 2, min: 0, max: 9.9}})
+    const {margin} = useControls({margin: {value: 2, min: 0, max: 29.9}})
 
     useFrame(({gl}) => {
         // render target A
         gl.setRenderTarget(renderTargetA)
-        gl.render(sceneA, camera);
+        gl.render(sceneA, mainCamera);
 
         // render target B
         gl.setRenderTarget(renderTargetB)
-        gl.render(sceneB, camera);
+        gl.render(sceneB, mainCamera);
 
         if (planeRef.current) {
             planeRef.current.material.uniforms.depthA.value = renderTargetA.depthTexture;
@@ -101,7 +118,6 @@ const P = () => {
         }
 
         gl.setRenderTarget(null);
-
     })
 
 
@@ -116,10 +132,6 @@ const P = () => {
         margin: {value: 1.5}
     }), [])
 
-    useEffect(() => {
-        console.log('console.log(planeRef.current)', planeRef.current)
-    }, [planeRef.current]);
-
     return <>
         {createPortal(<>
             <ambientLight intensity={Math.PI / 2}/>
@@ -133,7 +145,7 @@ const P = () => {
             <PhotogrammetryTiles/>
         </>, sceneB)}
 
-        <Plane position={[0, 0, 0]} args={[300, 250]} ref={planeRef}>
+        <Plane name={'Plane'} position={[0, 0, 0]} args={[2, 2]} ref={planeRef}>
             {/*<meshStandardMaterial map={renderTargetA?.texture}/>*/}
             <shaderMaterial
                 vertexShader={vertexShader}
